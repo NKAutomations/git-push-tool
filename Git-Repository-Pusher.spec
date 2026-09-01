@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['Y:\\PythonTools\\GitlabPush\\gitlab_push_tool.py'],
+    ['Y:\\PythonTools\\GitlabPush\\gitlab_push_tool_v2.py'],
     pathex=[],
     binaries=[],
     datas=[],

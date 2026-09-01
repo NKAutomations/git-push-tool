@@ -48,11 +48,11 @@ echo.
 echo [2/3] Alte Build-Dateien werden entfernt...
 if exist "%~dp0build" rmdir /s /q "%~dp0build"
 if exist "%~dp0dist" rmdir /s /q "%~dp0dist"
-if exist "%~dp0gitlab_push_tool.spec" del /q "%~dp0gitlab_push_tool_v2.spec"
+if exist "%~dp0gitlab_push_tool.spec" del /q "%~dp0gitlab_push_tool.spec"
 
 echo.
 echo [3/3] EXE wird gebaut...
-%PYTHON% -m PyInstaller --noconfirm --clean --onefile --windowed --name Git-Repository-Pusher "%~dp0gitlab_push_tool_v2.py"
+%PYTHON% -m PyInstaller --noconfirm --clean --onefile --windowed --name Git-Repository-Pusher "%~dp0gitlab_push_tool.py"
 if errorlevel 1 (
     echo.
     echo FEHLER: Die EXE konnte nicht erstellt werden.
