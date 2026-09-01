@@ -1,4 +1,4 @@
-('C:\\TOOLS\\PhytonProjekte\\GitlabPush\\build\\GitLab-Projekt-Pusher\\PYZ-00.pyz',
+('Y:\\PythonTools\\GitlabPush\\build\\Git-Repository-Pusher\\PYZ-00.pyz',
  [('__future__',
    'C:\\Program Files\\Python314\\Lib\\__future__.py',
    'PYMODULE'),

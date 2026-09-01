@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['C:\\TOOLS\\PhytonProjekte\\GitlabPush\\gitlab_push_tool.py'],
+    ['Y:\\PythonTools\\GitlabPush\\gitlab_push_tool.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='GitLab-Projekt-Pusher',
+    name='Git-Repository-Pusher',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

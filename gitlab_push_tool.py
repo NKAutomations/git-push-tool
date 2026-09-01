@@ -9,8 +9,11 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-APP_TITLE = "GitLab Projekt-Pusher"
+APP_TITLE = "Git Repository Pusher"
 DEFAULT_GITLAB_HOST = "https://gitlab.k8s.nobilia.de"
+
+
+PROVIDERS = ("GitLab", "GitHub")
 
 
 def find_git():
@@ -71,6 +74,18 @@ def is_valid_branch(branch):
     return bool(re.fullmatch(r"[A-Za-z0-9._/\-]+", branch))
 
 
+def is_valid_tag(tag):
+    if not tag or tag.startswith("-") or ".." in tag or any(ord(char) < 32 for char in tag):
+        return False
+    return bool(re.fullmatch(r"[A-Za-z0-9._/\-]+", tag))
+
+
+def is_valid_tag(tag):
+    if not tag or tag.startswith("-") or ".." in tag or any(ord(char) < 32 for char in tag):
+        return False
+    return bool(re.fullmatch(r"[A-Za-z0-9._/\-]+", tag))
+
+
 class GitLabPusher(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -105,10 +120,10 @@ class GitLabPusher(tk.Tk):
 
         header = ttk.Frame(outer)
         header.pack(fill="x", pady=(0, 20))
-        ttk.Label(header, text="Projekt nach GitLab schieben", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(header, text="Projekt zu GitLab oder GitHub pushen", style="Title.TLabel").pack(anchor="w")
         ttk.Label(
             header,
-            text="Ein kleines lokales Werkzeug für deine VS-Code-Projekte. Git bleibt dabei unter deiner Kontrolle.",
+            text="Ein lokales Werkzeug für VS-Code-Projekte, Branches und optionale Release-Tags.",
             style="Subtitle.TLabel",
         ).pack(anchor="w", pady=(4, 0))
 
@@ -117,23 +132,33 @@ class GitLabPusher(tk.Tk):
         self.project_var = tk.StringVar()
         self._path_row(project_box, self.project_var, "Projektordner", self.choose_project)
 
-        repo_box = ttk.LabelFrame(outer, text="2. GitLab-Ziel", padding=14)
+        repo_box = ttk.LabelFrame(outer, text="2. Zielplattform und Repository", padding=14)
         repo_box.pack(fill="x", pady=(0, 12))
+        self.provider_var = tk.StringVar(value="GitLab")
         self.repo_var = tk.StringVar()
-        self._entry_row(repo_box, "Repository-URL", self.repo_var, "z. B. https://gitlab.k8s.nobilia.de/instandhaltung/mein-projekt.git")
-        ttk.Label(
+        ttk.Label(repo_box, text="Plattform", width=19).grid(row=0, column=0, sticky="w", pady=5)
+        provider = ttk.Combobox(repo_box, textvariable=self.provider_var, values=PROVIDERS, state="readonly", width=16)
+        provider.grid(row=0, column=1, sticky="w", pady=5)
+        provider.bind("<<ComboboxSelected>>", self.provider_changed)
+        self._entry_row(repo_box, "Repository-URL", self.repo_var, "HTTPS- oder SSH-Clone-URL", row=1)
+        self.repo_hint = ttk.Label(
             repo_box,
-            text="Du kannst HTTPS oder SSH verwenden. Bei HTTPS nutzt Git die Windows-Anmeldeverwaltung; bei SSH deinen eingerichteten SSH-Schlüssel.",
+            text="GitLab: interne nobilia-URL. GitHub: github.com/<konto>/<repository>.git. Git nutzt deine lokale Anmeldung.",
             style="Subtitle.TLabel",
             wraplength=740,
-        ).grid(row=1, column=1, columnspan=2, sticky="w", pady=(7, 0))
+        )
+        self.repo_hint.grid(row=2, column=1, columnspan=2, sticky="w", pady=(7, 0))
 
-        options_box = ttk.LabelFrame(outer, text="3. Commit und Branch", padding=14)
+        options_box = ttk.LabelFrame(outer, text="3. Commit, Branch und Tag", padding=14)
         options_box.pack(fill="x", pady=(0, 12))
         self.branch_var = tk.StringVar(value="main")
         self.message_var = tk.StringVar(value="Projekt initial angelegt")
+        self.tag_var = tk.StringVar()
+        self.tag_message_var = tk.StringVar()
         self._entry_row(options_box, "Ziel-Branch", self.branch_var, "main", row=0)
         self._entry_row(options_box, "Commit-Nachricht", self.message_var, "z. B. Projekt initial angelegt", row=1)
+        self._entry_row(options_box, "Tag (optional)", self.tag_var, "z. B. v1.0.0", row=2)
+        self._entry_row(options_box, "Tag-Nachricht", self.tag_message_var, "leer = einfacher Tag; Text = annotierter Tag", row=3)
 
         actions = ttk.Frame(outer)
         actions.pack(fill="x", pady=(0, 12))
@@ -162,7 +187,7 @@ class GitLabPusher(tk.Tk):
         self.output.configure(yscrollcommand=scrollbar.set)
         self.output.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
-        self._log("Bereit. Wähle einen Projektordner und trage die Clone-URL des GitLab-Repositories ein.")
+        self._log("Bereit. Wähle einen Projektordner, eine Plattform und die Clone-URL des Repositories aus.")
 
         footer = ttk.Label(
             outer,
@@ -184,6 +209,13 @@ class GitLabPusher(tk.Tk):
         ttk.Entry(parent, textvariable=variable).grid(row=0, column=1, sticky="ew")
         ttk.Button(parent, text="Auswählen...", command=callback).grid(row=0, column=2, padx=(10, 0))
         parent.columnconfigure(1, weight=1)
+
+    def provider_changed(self, _event=None):
+        provider = self.provider_var.get()
+        if provider == "GitHub":
+            self.repo_hint.configure(text="GitHub: github.com/<konto>/<repository>.git. Nutze HTTPS mit Git Credential Manager oder SSH mit deinem GitHub-Schlüssel.")
+        else:
+            self.repo_hint.configure(text="GitLab: interne nobilia-URL. Nutze HTTPS oder SSH mit deiner lokalen Git-Anmeldung.")
 
     def _check_git(self):
         git = find_git()
@@ -215,11 +247,13 @@ class GitLabPusher(tk.Tk):
         repo = self.repo_var.get().strip()
         branch = self.branch_var.get().strip()
         message = self.message_var.get().strip()
+        tag = self.tag_var.get().strip()
+        tag_message = self.tag_message_var.get().strip()
         if not project.is_dir():
             messagebox.showerror("Projektordner fehlt", "Bitte wähle einen gültigen lokalen Projektordner aus.")
             return None
         if not repo or not (repo.startswith("https://") or repo.startswith("http://") or repo.startswith("git@") or repo.startswith("ssh://")):
-            messagebox.showerror("Repository-URL fehlt", "Bitte trage die Clone-URL des GitLab-Repositories ein.")
+            messagebox.showerror("Repository-URL fehlt", "Bitte trage die Clone-URL des Git-Repositories ein.")
             return None
         if not is_valid_branch(branch):
             messagebox.showerror("Branch ungültig", "Der Branch darf nur normale Git-Zeichen enthalten und keine Leerzeichen oder '..'.")
@@ -227,15 +261,18 @@ class GitLabPusher(tk.Tk):
         if not message:
             messagebox.showerror("Commit-Nachricht fehlt", "Bitte trage eine Commit-Nachricht ein.")
             return None
-        return project, repo, branch, message
+        if tag and not is_valid_tag(tag):
+            messagebox.showerror("Tag ungültig", "Der Tag darf keine Leerzeichen, '..' oder Steuerzeichen enthalten.")
+            return None
+        return project, repo, branch, message, tag, tag_message
 
     def check_connection(self):
         values = self._validate()
         if not values or self.busy:
             return
-        _, repo, _, _ = values
+        _, repo, _, _, _, _ = values
         self._set_busy(True)
-        self._log("Prüfe GitLab-Repository...")
+        self._log(f"Prüfe {self.provider_var.get()}-Repository...")
         threading.Thread(target=self._worker_check, args=(repo,), daemon=True).start()
 
     def _worker_check(self, repo):
@@ -246,17 +283,20 @@ class GitLabPusher(tk.Tk):
         values = self._validate()
         if not values or self.busy:
             return
-        project, repo, branch, message = values
+        project, repo, branch, message, tag, tag_message = values
+        action = "Commit erstellen und pushen"
+        if tag:
+            action += f" sowie Tag {tag} pushen"
         if not messagebox.askyesno(
             "Push bestätigen",
-            "Alle Dateien im ausgewählten Projektordner werden zu Git hinzugefügt und in das angegebene Repository gepusht. Fortfahren?",
+            f"Alle Dateien im ausgewählten Projektordner werden zu {self.provider_var.get()} hinzugefügt und in das angegebene Repository gepusht.\n\n{action}?",
         ):
             return
         self._set_busy(True)
         self._log("Starte Push-Vorgang...")
-        threading.Thread(target=self._worker_push, args=(project, repo, branch, message), daemon=True).start()
+        threading.Thread(target=self._worker_push, args=(project, repo, branch, message, tag, tag_message), daemon=True).start()
 
-    def _worker_push(self, project, repo, branch, message):
+    def _worker_push(self, project, repo, branch, message, tag, tag_message):
         steps = []
 
         def run(args):
@@ -299,6 +339,20 @@ class GitLabPusher(tk.Tk):
 
         if run(["push", "-u", "origin", branch]) != 0:
             return self.events.put(("push_done", steps, False))
+
+        if tag:
+            # Do not overwrite an existing tag silently.
+            code_tag, tag_output = run_git(["rev-parse", "-q", "--verify", f"refs/tags/{tag}"], cwd=str(project))
+            steps.append((["rev-parse", "-q", "--verify", f"refs/tags/{tag}"], code_tag, tag_output))
+            if code_tag == 0:
+                steps.append((["tag", tag], 1, f"Tag '{tag}' existiert lokal bereits und wird nicht überschrieben."))
+                return self.events.put(("push_done", steps, False))
+            tag_args = ["tag", "-a", tag, "-m", tag_message] if tag_message else ["tag", tag]
+            if run(tag_args) != 0:
+                return self.events.put(("push_done", steps, False))
+            if run(["push", "origin", f"refs/tags/{tag}"]) != 0:
+                return self.events.put(("push_done", steps, False))
+
         self.events.put(("push_done", steps, True))
 
     def _process_events(self):
@@ -309,10 +363,11 @@ class GitLabPusher(tk.Tk):
                     _, code, output = event
                     if output:
                         self._log(output)
+                    provider = self.provider_var.get()
                     if code == 0:
-                        self._log("Verbindung erfolgreich. GitLab akzeptiert die Repository-URL und deine lokale Anmeldung.")
+                        self._log(f"Verbindung erfolgreich. {provider} akzeptiert die Repository-URL und deine lokale Anmeldung.")
                     else:
-                        self._log("Verbindung fehlgeschlagen. Prüfe URL, Berechtigung sowie SSH- oder Windows-Git-Anmeldung.")
+                        self._log(f"Verbindung fehlgeschlagen. Prüfe URL, Berechtigung sowie SSH- oder Windows-Git-Anmeldung für {provider}.")
                     self._set_busy(False)
                 elif event[0] == "push_done":
                     _, steps, success = event
@@ -322,8 +377,9 @@ class GitLabPusher(tk.Tk):
                         if output:
                             self._log(output)
                     if success:
-                        self._log("Fertig: Das Projekt wurde erfolgreich zu GitLab gepusht.")
-                        messagebox.showinfo("Push erfolgreich", "Das Projekt wurde erfolgreich zu GitLab gepusht.")
+                        provider = self.provider_var.get()
+                        self._log(f"Fertig: Das Projekt wurde erfolgreich zu {provider} gepusht.")
+                        messagebox.showinfo("Push erfolgreich", f"Das Projekt wurde erfolgreich zu {provider} gepusht.")
                     else:
                         self._log("Push fehlgeschlagen. Die Ausgabe oben enthält die Git-Fehlermeldung.")
                         messagebox.showerror("Push fehlgeschlagen", "Git konnte den Push nicht abschließen. Prüfe die Statusausgabe.")

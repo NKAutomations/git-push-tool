@@ -3,7 +3,7 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 
 echo ==========================================
-echo   GitLab Projekt-Pusher - EXE erstellen
+echo   Git Repository Pusher - EXE erstellen
 echo ==========================================
 echo.
 
@@ -52,7 +52,7 @@ if exist "%~dp0gitlab_push_tool.spec" del /q "%~dp0gitlab_push_tool.spec"
 
 echo.
 echo [3/3] EXE wird gebaut...
-%PYTHON% -m PyInstaller --noconfirm --clean --onefile --windowed --name GitLab-Projekt-Pusher "%~dp0gitlab_push_tool.py"
+%PYTHON% -m PyInstaller --noconfirm --clean --onefile --windowed --name Git-Repository-Pusher "%~dp0gitlab_push_tool.py"
 if errorlevel 1 (
     echo.
     echo FEHLER: Die EXE konnte nicht erstellt werden.
@@ -64,7 +64,7 @@ echo.
 echo ==========================================
 echo Fertig!
 echo Die EXE liegt hier:
-echo %~dp0dist\GitLab-Projekt-Pusher.exe
+echo %~dp0dist\Git-Repository-Pusher.exe
 echo ==========================================
 echo.
 pause
