@@ -1,0 +1,71 @@
+@echo off
+setlocal EnableExtensions
+cd /d "%~dp0"
+
+echo ==========================================
+echo   Git Repository Pusher - EXE erstellen
+echo ==========================================
+echo.
+
+where py >nul 2>&1
+if %errorlevel%==0 (
+    set "PYTHON=py"
+) else (
+    where python >nul 2>&1
+    if %errorlevel%==0 (
+        set "PYTHON=python"
+    ) else (
+        echo FEHLER: Python wurde nicht gefunden.
+        echo Installiere Python fuer Windows und starte den Builder erneut.
+        pause
+        exit /b 1
+    )
+)
+
+if not exist "%~dp0gitlab_push_tool.py" (
+    echo FEHLER: gitlab_push_tool.py wurde nicht gefunden.
+    echo Lege diese BAT-Datei und die Python-Datei in denselben Ordner.
+    pause
+    exit /b 1
+)
+
+echo [1/3] Pruefe PyInstaller...
+%PYTHON% -m PyInstaller --version >nul 2>&1
+if errorlevel 1 (
+    echo PyInstaller wurde nicht gefunden. Installation wird gestartet...
+    %PYTHON% -m pip install --user pyinstaller
+    if errorlevel 1 (
+        echo.
+        echo FEHLER: PyInstaller konnte nicht installiert werden.
+        echo Falls eure Firmenrichtlinien Python-Pakete blockieren, bitte die IT um
+        echo die Installation von PyInstaller fuer deinen Windows-Benutzer bitten.
+        pause
+        exit /b 1
+    )
+)
+
+echo.
+echo [2/3] Alte Build-Dateien werden entfernt...
+if exist "%~dp0build" rmdir /s /q "%~dp0build"
+if exist "%~dp0dist" rmdir /s /q "%~dp0dist"
+if exist "%~dp0gitlab_push_tool.spec" del /q "%~dp0gitlab_push_tool.spec"
+
+echo.
+echo [3/3] EXE wird gebaut...
+%PYTHON% -m PyInstaller --noconfirm --clean --onefile --windowed --name Git-Repository-Pusher "%~dp0gitlab_push_tool.py"
+if errorlevel 1 (
+    echo.
+    echo FEHLER: Die EXE konnte nicht erstellt werden.
+    pause
+    exit /b 1
+)
+
+echo.
+echo ==========================================
+echo Fertig!
+echo Die EXE liegt hier:
+echo %~dp0dist\Git-Repository-Pusher.exe
+echo ==========================================
+echo.
+pause
+endlocal
