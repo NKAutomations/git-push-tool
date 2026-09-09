@@ -1,0 +1,17 @@
+Git Repository Pusher - Responsive Variante
+
+Umgesetzt:
+- Vertikal scrollbar gemachter Inhaltsbereich fuer kleine Bildschirmhoehen.
+- Mindestgroesse auf 420 x 540 reduziert.
+- Formularfelder wechseln unterhalb von 740 px auf einspaltiges Layout.
+- Lange Hilfetexte werden automatisch an die Fensterbreite angepasst.
+- Aktionsbuttons werden auf kleinen Breiten untereinander und vollbreit dargestellt.
+- Der Projektordner-Button wird auf kleinen Breiten unter dem Eingabefeld angezeigt.
+- Maus- und Touchpad-Scrolling im Inhaltsbereich.
+- Build-Dateien verwenden relative Pfade statt eines festen Laufwerks.
+
+Start:
+python gitlab_push_tool_v2.py
+
+EXE:
+build_gitlab_pusher.bat
