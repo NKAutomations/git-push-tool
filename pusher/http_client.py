@@ -1,5 +1,10 @@
 import mimetypes
 from urllib.parse import urlsplit
+from pip_system_certs.wrapt_requests import inject_truststore
+
+# Requests/certifi kennt Unternehmens-CAs oft nicht, die Windows selbst bereits
+# vertraut. Der System-Store wird verwendet, ohne Zertifikatsprüfung abzuschalten.
+inject_truststore()
 import requests
 from .models import AppError, Cancelled, checkpoint
 from .security import https_url
