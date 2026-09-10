@@ -681,8 +681,21 @@ class MainWindow(QMainWindow, TaskView):
         self.busy_label.setText('Remote-Tag bestätigt.')
 
     def show_release(self, context):
-        dialog = ReleaseDialog(*context, self)
+        try:
+            dialog = ReleaseDialog(*context, self)
+        except Exception as error:
+            self.results.appendPlainText('Release-Dialog konnte nicht geöffnet werden: ' + redact(str(error)))
+            QMessageBox.critical(self, 'Release-Dialog nicht verfügbar',
+                                 'Der Release-Dialog konnte nicht geöffnet werden.\n\n'
+                                 + redact(str(error)))
+            return
+        dialog.setModal(True)
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+        self.release_dialog = dialog
         dialog.exec()
+        self.release_dialog = None
         dialog.deleteLater()
 
     def closeEvent(self, event):
