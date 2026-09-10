@@ -19,6 +19,7 @@ class QtSmokeTests(unittest.TestCase):
         window.show()
         self.app.processEvents()
         self.assertEqual(window.controls.count(), 2)
+        self.assertFalse(window.open_last_release_button.isEnabled())
         window.close()
     def test_release_views(self):
         from pusher.gui import ReleaseDialog

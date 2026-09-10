@@ -464,6 +464,7 @@ class MainWindow(QMainWindow, TaskView):
         self.resize(1000, 840)
         self.setMinimumSize(420, 540)
         self.last_push = None
+        self.last_tag_context = None
         central = QWidget()
         root = QVBoxLayout(central)
         root.addWidget(label('Vom Projekt zum Release.', 'title'))
@@ -520,6 +521,10 @@ class MainWindow(QMainWindow, TaskView):
         form.addRow(self.auto_release)
         form.addRow(button('Committen und pushen', self.push, True))
         form.addRow(button('Nur Tag-Push erneut versuchen', self.retry_tag))
+        self.open_last_release_button = button('Release des letzten erfolgreichen Tags öffnen', self.open_last_release)
+        self.open_last_release_button.setEnabled(False)
+        self.open_last_release_button.setToolTip('Wird nach einem erfolgreichen Tag-Push aktiviert.')
+        form.addRow(self.open_last_release_button)
         form.addRow(button('Release für vorhandenen Tag öffnen', self.existing_release))
         layout.addWidget(group)
         layout.addStretch()
@@ -549,6 +554,8 @@ class MainWindow(QMainWindow, TaskView):
         if folder:
             self.project.setText(folder)
             self.last_push = None
+            self.last_tag_context = None
+            self.open_last_release_button.setEnabled(False)
 
     def readme(self):
         project = Path(self.project.text().strip())
@@ -610,6 +617,9 @@ class MainWindow(QMainWindow, TaskView):
         if report.tag and self.open_after_push:
             # Open only once QThread.finished has released the main view.
             self.next_release = (*self.pending_context[:2], report.tag, report.commit)
+        if report.tag and report.outcome == 'success':
+            self.last_tag_context = (*self.pending_context[:2], report.tag, report.commit)
+            self.open_last_release_button.setEnabled(True)
 
     @Slot()
     def task_finished(self):
@@ -642,6 +652,12 @@ class MainWindow(QMainWindow, TaskView):
         self.pending_context = (project, repo, branch)
         self.open_after_push = self.auto_release.isChecked()
         self.start_task('Tag-Push wird wiederholt …', operation, self.pushed)
+
+    def open_last_release(self):
+        if not self.last_tag_context:
+            QMessageBox.information(self, 'Kein erfolgreicher Tag-Push', 'Zuerst einen Tag erfolgreich pushen.')
+            return
+        self.show_release(self.last_tag_context)
 
     def existing_release(self):
         context = self.guarded_context()
