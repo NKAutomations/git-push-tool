@@ -1,0 +1,44 @@
+test_duplicate (test_core.AssetTests.test_duplicate) ... ok
+test_partial_upload_and_cancel (test_core.AssetTests.test_partial_upload_and_cancel) ... ok
+test_zip_and_checksums (test_core.AssetTests.test_zip_and_checksums) ... ok
+test_description_payload (test_core.GitLabTests.test_description_payload) ... ok
+test_draft_rejected (test_core.GitLabTests.test_draft_rejected) ... ok
+test_link_collision (test_core.GitLabTests.test_link_collision) ... ok
+test_link_retry_does_not_upload_again (test_core.GitLabTests.test_link_retry_does_not_upload_again) ... ok
+test_notes (test_core.GitLabTests.test_notes) ... ok
+test_update_payload (test_core.GitLabTests.test_update_payload) ... ok
+test_cancel (test_core.GitTests.test_cancel) ... ok
+test_divergence_safe (test_core.GitTests.test_divergence_safe) ... ok
+test_existing_branch_never_reset (test_core.GitTests.test_existing_branch_never_reset) ... ok
+test_explicit_lease (test_core.GitTests.test_explicit_lease) ... ok
+test_invalid_ref (test_core.GitTests.test_invalid_ref) ... ok
+test_merge (test_core.GitTests.test_merge) ... ok
+test_nested_rejected (test_core.GitTests.test_nested_rejected) ... ok
+test_new_project_initialization (test_core.GitTests.test_new_project_initialization) ... ok
+test_no_change_retry (test_core.GitTests.test_no_change_retry) ... ok
+test_push_and_tag (test_core.GitTests.test_push_and_tag) ... ok
+test_race_lease_rejects (test_core.GitTests.test_race_lease_rejects) ... ok
+test_tag_failure_partial_success (test_core.GitTests.test_tag_failure_partial_success) ... ok
+test_cancel_before_request (test_core.HTTPTests.test_cancel_before_request) ... ok
+test_host_block (test_core.HTTPTests.test_host_block) ... ok
+test_missing (test_core.HTTPTests.test_missing) ... ok
+test_status_mapping (test_core.HTTPTests.test_status_mapping) ... ok
+test_upload_stream (test_core.HTTPTests.test_upload_stream) ... ok
+test_renderer_without_gui_dependency (test_core.MarkdownTests.test_renderer_without_gui_dependency) ... ok
+test_different_asset_blocked (test_core.ProviderTests.test_different_asset_blocked) ... ok
+test_existing_release_requires_update (test_core.ProviderTests.test_existing_release_requires_update) ... ok
+test_explicit_update (test_core.ProviderTests.test_explicit_update) ... ok
+test_github_payload (test_core.ProviderTests.test_github_payload) ... ok
+test_gitlab_nested_path (test_core.ProviderTests.test_gitlab_nested_path) ... ok
+test_identical_asset_skipped (test_core.ProviderTests.test_identical_asset_skipped) ... ok
+test_redaction (test_core.SecurityTests.test_redaction) ... ok
+test_rejected_urls (test_core.SecurityTests.test_rejected_urls) ... ok
+test_urls (test_core.SecurityTests.test_urls) ... ok
+test_editor_preview (test_gui.QtSmokeTests.test_editor_preview) ... skipped 'PySide6 unavailable: GUI not tested here'
+test_main_window_small (test_gui.QtSmokeTests.test_main_window_small) ... skipped 'PySide6 unavailable: GUI not tested here'
+test_release_views (test_gui.QtSmokeTests.test_release_views) ... skipped 'PySide6 unavailable: GUI not tested here'
+
+----------------------------------------------------------------------
+Ran 39 tests in 11.384s
+
+OK (skipped=3)

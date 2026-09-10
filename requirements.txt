@@ -1,0 +1,12 @@
+# Fixed baseline, not a claim that these are the latest versions.
+PySide6==6.8.3
+shiboken6==6.8.3
+PySide6_Essentials==6.8.3
+PySide6_Addons==6.8.3
+markdown-it-py==3.0.0
+mdurl==0.1.2
+requests==2.32.3
+charset-normalizer==3.4.1
+idna==3.10
+urllib3==2.3.0
+certifi==2025.1.31
