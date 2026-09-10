@@ -682,7 +682,8 @@ class MainWindow(QMainWindow, TaskView):
 
     def show_release(self, context):
         try:
-            dialog = ReleaseDialog(*context, self)
+            project, repository, tag, commit = context
+            dialog = ReleaseDialog(repository, project, tag, commit, self)
         except Exception as error:
             self.results.appendPlainText('Release-Dialog konnte nicht geöffnet werden: ' + redact(str(error)))
             QMessageBox.critical(self, 'Release-Dialog nicht verfügbar',
