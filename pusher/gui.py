@@ -19,6 +19,7 @@ from .assets import validate_files, prepare, upload_files
 from .editor import MarkdownEditor, ReadmeDialog
 from .jobs import Job
 from .theme import stylesheet
+from .config import ConfigStore, CredentialStore
 
 
 STATUS = {'success': 'Erfolgreich', 'failed': 'Fehler', 'cancelled': 'Abgebrochen',
@@ -182,11 +183,14 @@ class ReleaseDialog(QDialog, TaskView):
         self.token = QLineEdit()
         self.token.setEchoMode(QLineEdit.EchoMode.Password)
         self.token.setPlaceholderText('Nur im Arbeitsspeicher; alternativ Umgebungsvariable')
+        self.remember_token = QCheckBox('Token im Windows Credential Manager speichern')
+        self.remember_token.setToolTip('Das Token wird nicht in der Konfigurationsdatei gespeichert.')
         self.source = QComboBox()
         self.source.addItem('Token-Feld / Umgebungsvariable', 'environment')
         if repository.provider == 'GitHub':
             self.source.addItem('GitHub CLI: gh auth token', 'gh')
         form.addRow('API-Token', self.token)
+        form.addRow(self.remember_token)
         form.addRow('Anmeldequelle', self.source)
         form.addRow(label(f'Token wird ausschließlich an {repository.api_origin} gesendet' + (' sowie uploads.github.com.' if repository.web_origin == 'https://github.com' else '.')))
         notes_layout.addWidget(group)
@@ -246,6 +250,10 @@ class ReleaseDialog(QDialog, TaskView):
         result_layout.addWidget(button('Release im Browser öffnen', self.open_release))
         self.controls.addTab(result_page, 'Ergebnisse')
         self.setup_tasks(root)
+        stored_token = CredentialStore.get(repository)
+        if stored_token:
+            self.token.setText(stored_token)
+            self.remember_token.setChecked(True)
 
     def with_provider(self, operation):
         explicit, source = self.token.text(), self.source.currentData()
@@ -253,6 +261,8 @@ class ReleaseDialog(QDialog, TaskView):
         def run(job):
             checkpoint(job.cancel)
             token = resolve_token(repo, explicit, source)
+            if self.remember_token.isChecked() and explicit.strip():
+                CredentialStore.set(repo, explicit.strip())
             client = HttpClient(repo, token, cancel=job.cancel)
             try:
                 return operation(provider_for(repo, client), job)
@@ -465,6 +475,7 @@ class MainWindow(QMainWindow, TaskView):
         self.setMinimumSize(420, 540)
         self.last_push = None
         self.last_tag_context = None
+        self.config_store = ConfigStore()
         central = QWidget()
         root = QVBoxLayout(central)
         root.addWidget(label('Vom Projekt zum Release.', 'title'))
@@ -494,6 +505,8 @@ class MainWindow(QMainWindow, TaskView):
         form.addRow(label('Git nutzt den eingerichteten Credential Manager oder SSH-Agenten. Keine Tokens in Repository-URLs eingeben. Bestehende Remotes werden nicht geändert.'))
         form.addRow(button('Verbindung prüfen', self.connection))
         form.addRow(button('README öffnen / anlegen', self.readme))
+        form.addRow(button('Konfiguration speichern unter …', self.export_config))
+        form.addRow(button('Konfiguration öffnen …', self.import_config))
         layout.addWidget(group)
         group, form = form_group('Änderungen und Commit')
         self.message = QLineEdit()
@@ -534,6 +547,7 @@ class MainWindow(QMainWindow, TaskView):
         self.controls.addTab(self.results, 'Prüfung und Ergebnisse')
         self.setup_tasks(root)
         self.setCentralWidget(central)
+        self.load_config(self.config_store.load())
 
     def context(self):
         project = Path(self.project.text().strip()).expanduser()
@@ -556,6 +570,67 @@ class MainWindow(QMainWindow, TaskView):
             self.last_push = None
             self.last_tag_context = None
             self.open_last_release_button.setEnabled(False)
+
+    def config_values(self):
+        return {
+            'project': self.project.text(),
+            'provider': self.provider.currentText(),
+            'remote': self.remote.text(),
+            'origin': self.origin.text(),
+            'branch': self.branch.text(),
+            'mode': self.mode.currentData(),
+            'unrelated': self.unrelated.isChecked(),
+            'message': self.message.text(),
+            'tag': self.tag.text(),
+            'tag_message': self.tag_message.text(),
+            'auto_release': self.auto_release.isChecked(),
+        }
+
+    def load_config(self, settings):
+        if not isinstance(settings, dict):
+            return
+        self.project.setText(str(settings.get('project', '')))
+        provider = str(settings.get('provider', 'GitHub'))
+        index = self.provider.findText(provider)
+        if index >= 0:
+            self.provider.setCurrentIndex(index)
+        for widget, key in ((self.remote, 'remote'), (self.origin, 'origin'),
+                            (self.branch, 'branch'), (self.message, 'message'),
+                            (self.tag, 'tag'), (self.tag_message, 'tag_message')):
+            if key in settings:
+                widget.setText(str(settings[key]))
+        mode = self.mode.findData(settings.get('mode', 'safe'))
+        if mode >= 0:
+            self.mode.setCurrentIndex(mode)
+        self.unrelated.setChecked(bool(settings.get('unrelated', False)))
+        self.auto_release.setChecked(bool(settings.get('auto_release', False)))
+
+    def save_config(self):
+        try:
+            self.config_store.save(self.config_values())
+        except OSError:
+            self.results.appendPlainText('Konfiguration konnte nicht gespeichert werden.')
+
+    def export_config(self):
+        path, _ = QFileDialog.getSaveFileName(self, 'Konfiguration speichern', 'git-repository-pusher.json', 'JSON (*.json)')
+        if not path:
+            return
+        try:
+            self.config_store.export(path, self.config_values())
+            self.results.appendPlainText('Konfiguration gespeichert: ' + path)
+        except OSError as error:
+            QMessageBox.warning(self, 'Konfiguration nicht gespeichert', redact(str(error)))
+
+    def import_config(self):
+        path, _ = QFileDialog.getOpenFileName(self, 'Konfiguration öffnen', '', 'JSON (*.json)')
+        if not path:
+            return
+        try:
+            self.load_config(self.config_store.import_file(path))
+            self.save_config()
+            self.results.appendPlainText('Konfiguration geladen: ' + path)
+        except AppError as error:
+            QMessageBox.warning(self, 'Konfiguration nicht geladen', str(error))
 
     def readme(self):
         project = Path(self.project.text().strip())
@@ -700,7 +775,11 @@ class MainWindow(QMainWindow, TaskView):
         dialog.deleteLater()
 
     def closeEvent(self, event):
-        event.accept() if self.can_close() else event.ignore()
+        if self.can_close():
+            self.save_config()
+            event.accept()
+        else:
+            event.ignore()
 
 
 def main():
