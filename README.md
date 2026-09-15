@@ -62,6 +62,44 @@ Die Übernahme ändert keine Git-Remotes automatisch. Das Paket enthält keine Z
 
 `requirements.txt` und `requirements-build.txt` fixieren direkte und bekannte transitive Abhängigkeiten auf eine konkrete Basis. Das ist **keine Behauptung aktueller oder sicherheitsgeprüfter neuester Versionen**, kein Hash-Lock und keine Garantie bitidentischer Builds. Vor Verteilung Abhängigkeiten im eigenen Freigabeprozess auf Sicherheitsupdates prüfen. Python-Patchversion, Wheels und Betriebssystem für streng reproduzierbare Builds zusätzlich festhalten.
 
+### Git-Identität vor der ersten Nutzung einmalig einrichten
+
+Vor der ersten Nutzung sollte die Git-Identität auf dem Rechner beziehungsweise in der Windows-VM bewusst eingerichtet und geprüft werden. Ein Repository kann bereits funktionieren, wenn `user.name` und `user.email` dort lokal hinterlegt sind. In einem zweiten oder neu geklonten Repository fehlen diese Werte jedoch möglicherweise wieder; dann scheitern Commit-Vorgänge oder automatische Erkennungsversuche.
+
+Git unterscheidet zwischen einer **lokalen Repository-Konfiguration** und einer **globalen Konfiguration**:
+
+- **Lokal** gesetzte Werte gelten nur im aktuellen Repository.
+- **Global** gesetzte Werte gelten für alle zukünftigen Projekte des aktuellen Windows-Benutzers auf diesem Rechner beziehungsweise in dieser VM.
+
+Für eine Windows-VM ist die globale Konfiguration in der Regel die sinnvollste Grundeinstellung, damit neue Projekte nicht erneut an einer fehlenden Git-Identität scheitern.
+
+```powershell
+git config --global user.email "ihre.github.email@beispiel.de"
+git config --global user.name "Ihr Name oder GitHub-Username"
+```
+
+Zur Prüfung ohne weitere Änderung eignen sich zum Beispiel diese Befehle:
+
+```powershell
+git config --global user.name
+git config --global user.email
+git config --list --show-origin
+```
+
+Es müssen echte persönliche Daten verwendet werden. `user.name` muss nicht zwingend dem GitHub-Username entsprechen; `user.email` sollte aber sinnvollerweise zu einem verifizierten Konto beziehungsweise zur gewünschten Commit-Zuordnung bei GitHub oder GitLab passen.
+
+Die Git-Identität ersetzt nicht automatisch die Authentifizierung am GitHub-/GitLab-Remote. Credential Manager, SSH-Agent oder andere Zugangsdaten bleiben weiterhin separat erforderlich.
+
+Falls die Identität absichtlich nur für ein einzelnes Repository gesetzt werden soll, erfolgt das ohne `--global` direkt im Projektordner:
+
+```powershell
+cd C:\Pfad\Zum\Projekt
+git config user.email "ihre.github.email@beispiel.de"
+git config user.name "Ihr Name oder GitHub-Username"
+```
+
+Keine Zugangsdaten, Tokens oder sonstigen privaten Werte in die Konfiguration oder in Projektdateien eintragen.
+
 ## Installation auf dem eigenen Windows-Rechner
 
 Die folgenden Befehle sind für den eigenen Rechner mit Paketquellenzugriff bestimmt; in der Erstellungsumgebung wurden keine Pakete nachinstalliert.
